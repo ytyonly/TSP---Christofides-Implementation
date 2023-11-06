@@ -20,7 +20,7 @@ struct Edge {
 };
 
 int distance(const Point& a, const Point& b) {
-    return std::round(std::hypot(a.x - b.x, a.y - b.y));
+    return round(hypot(a.x - b.x, a.y - b.y));
 }
 
 inline size_t key(int i,int j) {return (size_t) i << 32 | (unsigned int) j;}
@@ -259,7 +259,7 @@ vector<Edge> perfectMatching(Graph& graph) {
 vector<int> christofides(Graph& graph) {
     Graph MST = createMST(graph);
     vector<int> oddDegreeVertices = findOdd(MST);
-    // auto minWeightMatching = graph.findMinWeightPerfectMatching(oddDegreeVertices);
+    // vector<Edge> minWeightMatching = findMinWeightPerfectMatching(oddDegreeVertices);
     // auto multigraph = graph.combineMSTAndMatching(minWeightMatching);
     // auto eulerCircuit = graph.findEulerianCircuit();
     // auto tour = graph.shortcutEulerianCircuit(eulerCircuit);
