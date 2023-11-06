@@ -162,9 +162,103 @@ Graph createMST(Graph& graph) {
     return MST;
 }
 
+vector<int> findOdd(Graph& graph) {
+    int N = graph.n;
+    vector<int> degrees(N, 0);
+
+    for (Edge edge : graph.edges) {
+        degrees[edge.u]++;
+        degrees[edge.v]++;
+    }
+
+    vector<int> odd;
+    for (int i = 0; i < N; i++) {
+        if (degrees[i] % 2 != 0) {
+            odd.push_back(i);
+        }
+    }
+
+    return odd;
+}
+
+struct Blossom {
+    int v;  // Vertex number
+    int p;  // Parent of the blossom
+    int base;  // Base of the blossom
+    bool matched;  // True if the blossom is matched
+};
+
+// Function to find a perfect matching using the blossom algorithm
+vector<Edge> perfectMatching(Graph& graph) {
+    int n = graph.n;
+    vector<Blossom> blossoms(n);
+    vector<int> match(n, -1);  // Matching information
+    vector<bool> used(n, false);  // Used in augmenting path
+    vector<int> parent(n, -1);  // Parent in the tree
+    queue<int> q;
+
+    for (int u = 0; u < n; ++u) {
+        if (match[u] == -1) {
+            parent[u] = -1;
+            used.assign(n, false);
+            q.push(u);
+
+            while (!q.empty()) {
+                int v = q.front();
+                q.pop();
+
+                for (const Edge& edge : graph.edges) {
+                    if (edge.u == v || edge.v == v) {
+                        int to = (edge.u == v) ? edge.v : edge.u;
+
+                        if (!used[to]) {
+                            used[to] = true;
+                            q.push(match[to]);
+
+                            if (match[to] == -1) {
+                                while (v != -1) {
+                                    int p = parent[v];
+                                    int pp = match[p];
+                                    match[v] = p;
+                                    match[p] = v;
+                                    v = pp;
+                                }
+                            } else {
+                                parent[to] = v;
+                            }
+                        } else if (blossoms[to].base != blossoms[v].base) {
+                            int cur = v;
+                            while (cur != -1) {
+                                Blossom& b = blossoms[blossoms[cur].base];
+                                b.matched = !b.matched;
+                                cur = parent[b.base];
+                            }
+                            cur = to;
+                            while (cur != -1) {
+                                Blossom& b = blossoms[blossoms[cur].base];
+                                b.matched = !b.matched;
+                                cur = parent[b.base];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    vector<Edge> matching;
+    for (int u = 0; u < n; ++u) {
+        if (match[u] != -1 && u < match[u]) {
+            matching.push_back(graph.findEdge(u, match[u]));
+        }
+    }
+
+    return matching;
+}
+
 vector<int> christofides(Graph& graph) {
-    auto mst = createMST(graph);
-    // auto oddDegreeVertices = graph.findOddDegreeVertices();
+    Graph MST = createMST(graph);
+    vector<int> oddDegreeVertices = findOdd(MST);
     // auto minWeightMatching = graph.findMinWeightPerfectMatching(oddDegreeVertices);
     // auto multigraph = graph.combineMSTAndMatching(minWeightMatching);
     // auto eulerCircuit = graph.findEulerianCircuit();
