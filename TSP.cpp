@@ -5,6 +5,8 @@
 #include <unordered_set>
 #include <queue>
 #include <unordered_map>
+#include <stack>
+
 using namespace std;
 
 struct Point {
@@ -254,6 +256,60 @@ vector<Edge> perfectMatching(Graph& graph) {
     }
 
     return matching;
+}
+
+
+vector<int> findEulerianCircuit(Graph& graph, const vector<Edge>& matching) {
+    // Add matching edges to the graph to make all degrees even
+    for (const Edge& e : matching) {
+        graph.edges.push_back(e);
+        // Since the graph is undirected, add both directions
+        graph.pointIndexToEdgesIndex[key(e.u, e.v)] = graph.edges.size() - 1;
+        graph.pointIndexToEdgesIndex[key(e.v, e.u)] = graph.edges.size() - 1;
+    }
+
+    stack<int> stack;
+    stack.push(0);
+    unordered_set<size_t> usedEdges;
+
+    vector<int> circuit;
+
+    while (!stack.empty()) {
+        int v = stack.top();
+
+        bool found = false;
+        for (size_t i = 0; i < graph.edges.size(); ++i) {
+            Edge& e = graph.edges[i];
+            size_t edgeKey = key(e.u, e.v);
+
+            if ((e.u == v || e.v == v) && usedEdges.find(edgeKey) == usedEdges.end()) {
+                stack.push(e.u == v ? e.v : e.u);
+                usedEdges.insert(edgeKey);  // Mark edge as used in both directions
+                usedEdges.insert(key(e.v, e.u));  // Undirected graph: mark in both directions
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            stack.pop();
+            circuit.push_back(v);
+        }
+    }
+    reverse(circuit.begin(), circuit.end());
+    return circuit;
+}
+
+vector<int> shortcutEulerianCircuit(const vector<int>& eulerCircuit) {
+    vector<int> tour;
+    unordered_set<int> visited;
+    for (int vertex : eulerCircuit) {
+        // If we have not visited this vertex before, add it to the Hamiltonian circuit
+        if (visited.find(vertex) == visited.end()) {
+            tour.push_back(vertex);
+            visited.insert(vertex); // Mark the vertex as visited
+        }
+    }
+    return tour;
 }
 
 vector<int> christofides(Graph& graph) {
