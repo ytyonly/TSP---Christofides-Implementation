@@ -39,6 +39,7 @@ struct Graph {
         for(int i = 0; i < n; ++i) {
             for(int j = 0; j < n; ++j) {
                 edges.push_back(Edge(i, j, distance(points[i], points[j])));
+                pointIndexToEdgesIndex[key(j,i)] = k;
                 pointIndexToEdgesIndex[key(i,j)] = k++;
             }
         }
@@ -183,81 +184,28 @@ vector<int> findOdd(Graph& graph) {
     return odd;
 }
 
-struct Blossom {
-    int v;  // Vertex number
-    int p;  // Parent of the blossom
-    int base;  // Base of the blossom
-    bool matched;  // True if the blossom is matched
-};
+vector<Edge> perfectMatching(const Graph& graph, const vector<int>& oddVertices) {
+    vector<Edge> matching;
 
-// Function to find a perfect matching using the blossom algorithm
-vector<Edge> perfectMatching(Graph& graph) {
-    int n = graph.n;
-    vector<Blossom> blossoms(n);
-    vector<int> match(n, -1);  // Matching information
-    vector<bool> used(n, false);  // Used in augmenting path
-    vector<int> parent(n, -1);  // Parent in the tree
-    queue<int> q;
+    // Simple greedy matching: connect each odd vertex to the nearest neighbor
+    for (int i : oddVertices) {
+        int minDistance = INT_MAX;
+        Edge minEdge(0, 0, 0);
 
-    for (int u = 0; u < n; ++u) {
-        if (match[u] == -1) {
-            parent[u] = -1;
-            used.assign(n, false);
-            q.push(u);
-
-            while (!q.empty()) {
-                int v = q.front();
-                q.pop();
-
-                for (const Edge& edge : graph.edges) {
-                    if (edge.u == v || edge.v == v) {
-                        int to = (edge.u == v) ? edge.v : edge.u;
-
-                        if (!used[to]) {
-                            used[to] = true;
-                            q.push(match[to]);
-
-                            if (match[to] == -1) {
-                                while (v != -1) {
-                                    int p = parent[v];
-                                    int pp = match[p];
-                                    match[v] = p;
-                                    match[p] = v;
-                                    v = pp;
-                                }
-                            } else {
-                                parent[to] = v;
-                            }
-                        } else if (blossoms[to].base != blossoms[v].base) {
-                            int cur = v;
-                            while (cur != -1) {
-                                Blossom& b = blossoms[blossoms[cur].base];
-                                b.matched = !b.matched;
-                                cur = parent[b.base];
-                            }
-                            cur = to;
-                            while (cur != -1) {
-                                Blossom& b = blossoms[blossoms[cur].base];
-                                b.matched = !b.matched;
-                                cur = parent[b.base];
-                            }
-                        }
-                    }
+        for (const Edge& edge : graph.edges) {
+            if ((edge.u == i || edge.v == i) && find(oddVertices.begin(), oddVertices.end(), edge.v) != oddVertices.end()) {
+                if (edge.distance < minDistance) {
+                    minDistance = edge.distance;
+                    minEdge = edge;
                 }
             }
         }
-    }
 
-    vector<Edge> matching;
-    for (int u = 0; u < n; ++u) {
-        if (match[u] != -1 && u < match[u]) {
-            matching.push_back(graph.findEdge(u, match[u]));
-        }
+        matching.push_back(minEdge);
     }
 
     return matching;
 }
-
 
 vector<int> findEulerianCircuit(Graph& graph, const vector<Edge>& matching) {
     // Add matching edges to the graph to make all degrees even
@@ -315,11 +263,10 @@ vector<int> shortcutEulerianCircuit(const vector<int>& eulerCircuit) {
 vector<int> christofides(Graph& graph) {
     Graph MST = createMST(graph);
     vector<int> oddDegreeVertices = findOdd(MST);
-    // vector<Edge> minWeightMatching = findMinWeightPerfectMatching(oddDegreeVertices);
-    // auto multigraph = graph.combineMSTAndMatching(minWeightMatching);
-    // auto eulerCircuit = graph.findEulerianCircuit();
-    // auto tour = graph.shortcutEulerianCircuit(eulerCircuit);
-    vector<int> tour = {};
+    vector<Edge> minWeightMatching = perfectMatching(graph, oddDegreeVertices);
+    // auto multigraph = combineMSTAndMatching(minWeightMatching);
+    auto eulerCircuit = findEulerianCircuit(graph, minWeightMatching);
+    auto tour = shortcutEulerianCircuit(eulerCircuit);
     return tour;
 }
 
@@ -335,7 +282,7 @@ int main() {
     graph.calDistance();
 
     vector<int> tour = christofides(graph);
-    perform2Opt(tour, graph);
+    // perform2Opt(tour, graph);
     // int tourlen = 0;
     // for(int i = 1; i < tour.size(); ++i) {
     //     tourlen += dis[tour[i-1]][tour[i]];
