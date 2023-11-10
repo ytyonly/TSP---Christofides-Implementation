@@ -43,7 +43,7 @@ struct Graph {
                     edges.push_back(Edge(i, j, distance(points[i], points[j])));
                     pointIndexToEdgesIndex[key(j,i)] = k;
                     pointIndexToEdgesIndex[key(i,j)] = k++;
-                }             
+                }
             }
         }
     }
@@ -187,24 +187,33 @@ vector<int> findOdd(Graph& graph) {
     return odd;
 }
 
-vector<Edge> perfectMatching(Graph& graph, vector<int>& oddVertices) {
+vector<Edge> perfectMatching(Graph& graph, const vector<int>& oddVertices) {
     vector<Edge> matching;
+    unordered_set<int> matched; // To keep track of vertices that have already been matched
 
-    // Simple greedy matching: connect each odd vertex to the nearest neighbor
-    for (int i : oddVertices) {
+    for (int u : oddVertices) {
+        if (matched.find(u) != matched.end()) {
+            continue; // Skip if already matched
+        }
+
         int minDistance = INT_MAX;
-        Edge minEdge(0, 0, 0);
+        int partner = -1;
 
-        for (Edge edge : graph.edges) {
-            if ((edge.u == i || edge.v == i) && find(oddVertices.begin(), oddVertices.end(), edge.v) != oddVertices.end()) {
-                if (edge.distance < minDistance) {
-                    minDistance = edge.distance;
-                    minEdge = edge;
+        for (int v : oddVertices) {
+            if (u != v && matched.find(v) == matched.end()) { // Check if not matched yet
+                int dist = graph.findEdge(u, v).distance;
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    partner = v;
                 }
             }
         }
 
-        matching.push_back(minEdge);
+        if (partner != -1) {
+            matched.insert(u);
+            matched.insert(partner);
+            matching.push_back(Edge(u, partner, minDistance));
+        }
     }
 
     return matching;
@@ -214,14 +223,11 @@ vector<int> findEulerianCircuit(Graph& graph, const vector<Edge>& matching) {
     // Add matching edges to the graph to make all degrees even
     for (const Edge& e : matching) {
         graph.edges.push_back(e);
-        // Since the graph is undirected, add both directions
-        graph.pointIndexToEdgesIndex[key(e.u, e.v)] = graph.edges.size() - 1;
-//        graph.pointIndexToEdgesIndex[key(e.v, e.u)] = graph.edges.size() - 1;
     }
 
     stack<int> stack;
     stack.push(0);
-    unordered_set<size_t> usedEdges;
+    unordered_set<int> usedEdges; // Use the edge index to mark as used
 
     vector<int> circuit;
 
@@ -231,23 +237,24 @@ vector<int> findEulerianCircuit(Graph& graph, const vector<Edge>& matching) {
         bool found = false;
         for (size_t i = 0; i < graph.edges.size(); ++i) {
             Edge& e = graph.edges[i];
-            size_t edgeKey = key(e.u, e.v);
 
-            if ((e.u == v || e.v == v) && usedEdges.find(edgeKey) == usedEdges.end()) {
+            if ((e.u == v || e.v == v) && usedEdges.find(i) == usedEdges.end()) {
                 stack.push(e.u == v ? e.v : e.u);
-                usedEdges.insert(edgeKey);  // Mark edge as used in both directions
-                usedEdges.insert(key(e.v, e.u));  // Undirected graph: mark in both directions
+                usedEdges.insert(i);  // Mark edge as used by its index
                 found = true;
                 break;
             }
         }
+
         if (!found) {
             stack.pop();
-            circuit.push_back(v);
+            if (!stack.empty()) { // Avoid adding start vertex twice
+                circuit.push_back(v);
+            }
         }
     }
-    reverse(circuit.begin(), circuit.end());
-    return circuit;
+
+    return circuit; // The circuit might not need to be reversed depending on your requirements
 }
 
 vector<int> shortcutEulerianCircuit(const vector<int>& eulerCircuit) {
@@ -305,14 +312,15 @@ int main() {
     }
     graph.calDistance();
 
-   vector<int> tour = christofides(graph);
-    // vector<int> tour = christofides_Test(graph);
+    vector<int> tour = christofides(graph);
+//     vector<int> tour = christofides_Test(graph);
+
     // perform2Opt(tour, graph);
-    // int tourlen = 0;
-    // for(int i = 1; i < tour.size(); ++i) {
-    //     tourlen += graph.findEdge(tour[i-1],tour[i]).distance;
-    // }
-    // cout<<"tour length is "<<tourlen<<endl;
+//     int tourlen = 0;
+//     for(int i = 1; i < tour.size(); ++i) {
+//         tourlen += graph.findEdge(tour[i-1],tour[i]).distance;
+//     }
+//     cout<<"tour length is "<<tourlen<<endl;
     for (int index : tour) {
         cout << index << endl;
     }
