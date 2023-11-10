@@ -6,6 +6,7 @@
 #include <queue>
 #include <unordered_map>
 #include <stack>
+#include <limits.h>
 
 using namespace std;
 
@@ -55,7 +56,7 @@ struct Graph {
 //     vector<int> tour;
 //     tour.reserve(N);
 //     vector<bool> visited(N, false);
-    
+
 //     // Start from the first point
 //     int current = 0;
 //     tour.push_back(current);
@@ -97,7 +98,7 @@ void perform2Opt(vector<int>& tour, Graph graph) {
             for (size_t k = i + 1; k < tour.size(); ++k) {
                 int delta = - graph.findEdge(tour[i], tour[i + 1]).distance - graph.findEdge(tour[k], tour[(k + 1) % tour.size()]).distance
                             + graph.findEdge(tour[i], tour[k]).distance - graph.findEdge(tour[i + 1], tour[(k + 1) % tour.size()]).distance;
-                
+
                 if (delta < bestDelta) {
                     bestDelta = delta;
                     bestI = i;
@@ -124,7 +125,7 @@ Graph createMST(Graph& graph) {
     Graph MST(N);
     MST.points = graph.points;
 
-    //choose the points[0] as the first vertice to find MST 
+    //choose the points[0] as the first vertice to find MST
     int current = 0;
     visited.insert(0);
 
@@ -213,7 +214,7 @@ vector<int> findEulerianCircuit(Graph& graph, const vector<Edge>& matching) {
         graph.edges.push_back(e);
         // Since the graph is undirected, add both directions
         graph.pointIndexToEdgesIndex[key(e.u, e.v)] = graph.edges.size() - 1;
-        graph.pointIndexToEdgesIndex[key(e.v, e.u)] = graph.edges.size() - 1;
+//        graph.pointIndexToEdgesIndex[key(e.v, e.u)] = graph.edges.size() - 1;
     }
 
     stack<int> stack;
@@ -260,12 +261,33 @@ vector<int> shortcutEulerianCircuit(const vector<int>& eulerCircuit) {
     return tour;
 }
 
+vector<int> christofides_Test(Graph& graph) {
+    Graph MST = createMST(graph);
+
+    cout<< "MST" << endl;
+    for(Edge e : MST.edges) {
+        cout<<e.u<<" "<<e.v<<" "<<e.distance<<endl;
+    }
+
+    vector<int> oddDegreeVertices = findOdd(MST);
+    vector<Edge> minWeightMatching = perfectMatching(graph, oddDegreeVertices);
+
+    cout<< "Matching" << endl;
+    for(Edge e : minWeightMatching) {
+        cout<<e.u<<" "<<e.v<<" "<<e.distance<<endl;
+    }
+
+    auto eulerCircuit = findEulerianCircuit(MST, minWeightMatching);
+//    auto tour = shortcutEulerianCircuit(eulerCircuit);
+//    return tour;
+    return eulerCircuit;
+}
+
 vector<int> christofides(Graph& graph) {
     Graph MST = createMST(graph);
     vector<int> oddDegreeVertices = findOdd(MST);
     vector<Edge> minWeightMatching = perfectMatching(graph, oddDegreeVertices);
-    // auto multigraph = combineMSTAndMatching(minWeightMatching);
-    auto eulerCircuit = findEulerianCircuit(graph, minWeightMatching);
+    auto eulerCircuit = findEulerianCircuit(MST, minWeightMatching);
     auto tour = shortcutEulerianCircuit(eulerCircuit);
     return tour;
 }
@@ -281,7 +303,8 @@ int main() {
     }
     graph.calDistance();
 
-    vector<int> tour = christofides(graph);
+//    vector<int> tour = christofides(graph);
+    vector<int> tour = christofides_Test(graph);
     // perform2Opt(tour, graph);
     // int tourlen = 0;
     // for(int i = 1; i < tour.size(); ++i) {
