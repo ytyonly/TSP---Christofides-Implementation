@@ -39,9 +39,11 @@ struct Graph {
         int k = 0;
         for(int i = 0; i < n; ++i) {
             for(int j = 0; j < n; ++j) {
-                edges.push_back(Edge(i, j, distance(points[i], points[j])));
-                pointIndexToEdgesIndex[key(j,i)] = k;
-                pointIndexToEdgesIndex[key(i,j)] = k++;
+                if(i != j) {
+                    edges.push_back(Edge(i, j, distance(points[i], points[j])));
+                    pointIndexToEdgesIndex[key(j,i)] = k;
+                    pointIndexToEdgesIndex[key(i,j)] = k++;
+                }             
             }
         }
     }
@@ -185,7 +187,7 @@ vector<int> findOdd(Graph& graph) {
     return odd;
 }
 
-vector<Edge> perfectMatching(const Graph& graph, const vector<int>& oddVertices) {
+vector<Edge> perfectMatching(Graph& graph, vector<int>& oddVertices) {
     vector<Edge> matching;
 
     // Simple greedy matching: connect each odd vertex to the nearest neighbor
@@ -193,7 +195,7 @@ vector<Edge> perfectMatching(const Graph& graph, const vector<int>& oddVertices)
         int minDistance = INT_MAX;
         Edge minEdge(0, 0, 0);
 
-        for (const Edge& edge : graph.edges) {
+        for (Edge edge : graph.edges) {
             if ((edge.u == i || edge.v == i) && find(oddVertices.begin(), oddVertices.end(), edge.v) != oddVertices.end()) {
                 if (edge.distance < minDistance) {
                     minDistance = edge.distance;
@@ -303,12 +305,12 @@ int main() {
     }
     graph.calDistance();
 
-//    vector<int> tour = christofides(graph);
-    vector<int> tour = christofides_Test(graph);
+   vector<int> tour = christofides(graph);
+    // vector<int> tour = christofides_Test(graph);
     // perform2Opt(tour, graph);
     // int tourlen = 0;
     // for(int i = 1; i < tour.size(); ++i) {
-    //     tourlen += dis[tour[i-1]][tour[i]];
+    //     tourlen += graph.findEdge(tour[i-1],tour[i]).distance;
     // }
     // cout<<"tour length is "<<tourlen<<endl;
     for (int index : tour) {
