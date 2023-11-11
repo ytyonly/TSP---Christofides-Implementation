@@ -53,33 +53,6 @@ struct Graph {
     }
 };
 
-// vector<int> nearestNeighbor(const vector<Point>& points, vector<vector<int>> dis) {
-//     int N = points.size();
-//     vector<int> tour;
-//     tour.reserve(N);
-//     vector<bool> visited(N, false);
-
-//     // Start from the first point
-//     int current = 0;
-//     tour.push_back(current);
-//     visited[current] = true;
-
-
-//     // Build the tour
-//     for (int i = 1; i < N; ++i) {
-//         int best = -1;
-//         for (int j = 0; j < N; ++j) {
-//             if (!visited[j] && (best == -1 || dis[current][j] < dis[current][best])) {
-//                 best = j;
-//             }
-//         }
-//         current = best;
-//         tour.push_back(current);
-//         visited[current] = true;
-//     }
-
-//     return tour;
-// }
 
 void reverseSection(vector<int>& tour, size_t i, size_t k) {
     while (i < k) {
@@ -89,18 +62,21 @@ void reverseSection(vector<int>& tour, size_t i, size_t k) {
     }
 }
 
-// Function to perform 2-opt optimization
-void perform2Opt(vector<int>& tour, Graph graph) {
+void perform2Opt(vector<int>& tour, Graph& graph) {
     bool improvement = true;
     while (improvement) {
         improvement = false;
         int bestDelta = 0;
         size_t bestI = 0, bestK = 0;
+
         for (size_t i = 0; i < tour.size() - 1; ++i) {
             for (size_t k = i + 1; k < tour.size(); ++k) {
-                int delta = - graph.findEdge(tour[i], tour[i + 1]).distance - graph.findEdge(tour[k], tour[(k + 1) % tour.size()]).distance
-                            + graph.findEdge(tour[i], tour[k]).distance - graph.findEdge(tour[i + 1], tour[(k + 1) % tour.size()]).distance;
+                // Calculate the change in distance if a 2-opt swap is performed
+                int delta = graph.findEdge(i, k).distance;
 
+//                int delta = calculateDelta(tour, graph, i, k);
+
+                // Check if this is the best improvement seen so far
                 if (delta < bestDelta) {
                     bestDelta = delta;
                     bestI = i;
@@ -108,8 +84,11 @@ void perform2Opt(vector<int>& tour, Graph graph) {
                 }
             }
         }
+
+        // If a better route is found, perform the swap
         if (bestDelta < 0) {
-            reverseSection(tour, bestI + 1, bestK);
+            // Reversing the segment of the tour between bestI+1 and bestK
+            std::reverse(tour.begin() + bestI + 1, tour.begin() + bestK + 1);
             improvement = true;
         }
     }
@@ -200,7 +179,7 @@ vector<Edge> perfectMatching(Graph& graph, const vector<int>& oddVertices) {
         int partner = -1;
 
         for (int v : oddVertices) {
-            if (u != v && matched.find(v) == matched.end()) { // Check if not matched yet
+            if (u != v && matched.find(v) == matched.end()) {
                 int dist = graph.findEdge(u, v).distance;
                 if (dist < minDistance) {
                     minDistance = dist;
@@ -218,7 +197,6 @@ vector<Edge> perfectMatching(Graph& graph, const vector<int>& oddVertices) {
 
     return matching;
 }
-
 vector<int> findEulerianCircuit(Graph& graph, const vector<Edge>& matching) {
     // Add matching edges to the graph to make all degrees even
     for (const Edge& e : matching) {
@@ -315,14 +293,18 @@ int main() {
     vector<int> tour = christofides(graph);
 //     vector<int> tour = christofides_Test(graph);
 
-    // perform2Opt(tour, graph);
+//     perform2Opt(tour, graph);
 //     int tourlen = 0;
 //     for(int i = 1; i < tour.size(); ++i) {
 //         tourlen += graph.findEdge(tour[i-1],tour[i]).distance;
 //     }
 //     cout<<"tour length is "<<tourlen<<endl;
-    for (int index : tour) {
-        cout << index << endl;
+    if (graph.points.size()==1){
+        cout << "0" << endl;
+    }else{
+        for (int index : tour) {
+            cout << index << endl;
+        }
     }
 
     return 0;
