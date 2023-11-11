@@ -231,7 +231,9 @@ vector<int> findEulerianCircuit(Graph& graph, const vector<Edge>& matching) {
             }
         }
     }
-
+    if (circuit.size() == 0) {
+        circuit.push_back(0);
+    }
     return circuit; // The circuit might not need to be reversed depending on your requirements
 }
 
@@ -299,12 +301,8 @@ int main() {
 //         tourlen += graph.findEdge(tour[i-1],tour[i]).distance;
 //     }
 //     cout<<"tour length is "<<tourlen<<endl;
-    if (graph.points.size()==1){
-        cout << "0" << endl;
-    }else{
-        for (int index : tour) {
-            cout << index << endl;
-        }
+    for (int index : tour) {
+        cout << index << endl;
     }
 
     return 0;
