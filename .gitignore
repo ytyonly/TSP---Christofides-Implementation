@@ -2,4 +2,5 @@
 .vscode/
 .idea/
 *.exe
+*.o
 TSP.dSYM/

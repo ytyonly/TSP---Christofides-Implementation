@@ -68,6 +68,15 @@ struct myGraph {
         pointIndexToEdgesIndex[key(u,v)].push_back(k);
         pointIndexToEdgesIndex[key(v,u)].push_back(k++);
     }
+
+    int tourLength(const vector<int>& tour) {
+        int totalDistance = 0;
+        for (int i = 0; i < tour.size(); ++i) {
+            int j = (i + 1) % tour.size(); // To loop back to the start
+            totalDistance += this->cost[tour[i]][tour[j]];
+        }
+        return totalDistance;
+    }
 };
 
 
@@ -240,7 +249,48 @@ vector<myEdge> perfectMatching(myGraph& graph, const vector<int>& oddVertices) {
 
     return minWeightMatching;
 }
-vector<int> findEulerianCircuit(myGraph& graph, const vector<myEdge>& matching) {
+
+vector<int> findEulerianCircuit(myGraph& graph, const vector<myEdge>& matching, int start) {
+    // Add matching edges to the graph to make all degrees even
+    for (const myEdge& e : matching) {
+        graph.edges.push_back(e);
+    }
+
+    stack<int> stack;
+    stack.push(start); // Changed from 0 to start
+    unordered_set<int> usedEdges; // Use the edge index to mark as used
+
+    vector<int> circuit;
+
+    while (!stack.empty()) {
+        int v = stack.top();
+
+        bool found = false;
+        for (size_t i = 0; i < graph.edges.size(); ++i) {
+            myEdge& e = graph.edges[i];
+
+            if ((e.u == v || e.v == v) && usedEdges.find(i) == usedEdges.end()) {
+                stack.push(e.u == v ? e.v : e.u);
+                usedEdges.insert(i);  // Mark edge as used by its index
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            stack.pop();
+            if (!stack.empty()) { // Avoid adding start vertex twice
+                circuit.push_back(v);
+            }
+        }
+    }
+    if (circuit.size() == 0) {
+        circuit.push_back(start);
+    }
+    return circuit; // The circuit might not need to be reversed depending on your requirements
+}
+
+vector<int> findEulerianCircuit_old(myGraph& graph, const vector<myEdge>& matching) {
     // Add matching edges to the graph to make all degrees even
     for (const myEdge& e : matching) {
         graph.edges.push_back(e);
@@ -336,19 +386,48 @@ vector<int> christofides_Test(myGraph& graph) {
     // for(myEdge e : minWeightMatching) {
     //     cout<<e.u<<" "<<e.v<<" "<<e.distance<<endl;
     // }
-
-    auto eulerCircuit = findEulerianCircuit(MST, minWeightMatching);
-//    auto tour = shortcutEulerianCircuit(eulerCircuit);
+    int best = INT_MAX;
+    int bestIndex;
+    for (int i = 0; i < graph.points.size(); ++i) {
+        auto eulerCircuit = findEulerianCircuit(MST, minWeightMatching, i);
+        auto tour = shortcutEulerianCircuit(eulerCircuit);
+        if (graph.tourLength(tour) < best) {
+            bestIndex = i;
+            best = graph.tourLength(tour);
+            cout<<"di:"<<i<<endl;
+             for(int i : tour) {
+                 cout<< i << endl;
+             }
+        }
+    }
+    vector<int> tour = shortcutEulerianCircuit(findEulerianCircuit(MST, minWeightMatching, bestIndex));
 //    return tour;
-    return eulerCircuit;
+    return tour;
 }
 
 vector<int> christofides(myGraph& graph) {
     myGraph MST = createMST(graph);
     vector<int> oddDegreeVertices = findOdd(MST);
     vector<myEdge> minWeightMatching = perfectMatching(graph, oddDegreeVertices);
-    auto eulerCircuit = findEulerianCircuit(MST, minWeightMatching);
-    auto tour = shortcutEulerianCircuit(eulerCircuit);
+
+
+    int best = INT_MAX;
+    int bestIndex;
+    for (int i = 0; i < graph.points.size(); ++i) {
+        auto eulerCircuit = findEulerianCircuit(MST, minWeightMatching, i);
+        auto tour = shortcutEulerianCircuit(eulerCircuit);
+        if (graph.tourLength(tour) < best) {
+            bestIndex = i;
+            best = graph.tourLength(tour);
+//            cout<<"di:"<<i<<endl;
+//            cout<<best<<endl;
+//            for(int i : tour) {
+//                cout<< i << endl;
+//            }
+        }
+    }
+    vector<int> tour = shortcutEulerianCircuit(findEulerianCircuit(MST, minWeightMatching, bestIndex));
+//    return tour;
     return tour;
 }
 
@@ -356,8 +435,23 @@ vector<int> christofides_bigInput(myGraph& graph) {
     myGraph MST = createMST(graph);
     vector<int> oddDegreeVertices = findOdd(MST);
     vector<myEdge> minWeightMatching = perfectMatching_greedy(graph, oddDegreeVertices);
-    auto eulerCircuit = findEulerianCircuit(MST, minWeightMatching);
-    auto tour = shortcutEulerianCircuit(eulerCircuit);
+
+    int best = INT_MAX;
+    int bestIndex;
+    for (int i = 0; i < graph.points.size(); ++i) {
+        auto eulerCircuit = findEulerianCircuit(MST, minWeightMatching, i);
+        auto tour = shortcutEulerianCircuit(eulerCircuit);
+        if (graph.tourLength(tour) < best) {
+            bestIndex = i;
+            best = graph.tourLength(tour);
+            cout<<i<<endl;
+            for(int i : tour) {
+                cout<< i << endl;
+            }
+        }
+    }
+    vector<int> tour = shortcutEulerianCircuit(findEulerianCircuit(MST, minWeightMatching, bestIndex));
+//    return tour;
     return tour;
 }
 
@@ -378,15 +472,18 @@ int main() {
     } else {
         tour = christofides(graph);
     }
+
     //vector<int> tour = christofides_Test(graph);
 
     perform2Opt(tour, graph);
+
     // int tourlen = 0;
     // for(int i = 1; i < tour.size(); ++i) {
     //     tourlen += graph.cost[tour[i-1]][tour[i]];
     // }
     // tourlen += graph.cost[tour[tour.size()-1]][tour[0]];
     // cout<<"tour length is "<<tourlen<<endl;
+
     for (int index : tour) {
         cout << index << endl;
     }
