@@ -13,6 +13,11 @@ struct Point {
     Point(double x, double y) : x(x), y(y) {}
 };
 
+struct Path {
+    vector<int> tour;
+    int distance = 0;
+};
+
 // Function to calculate the Euclidean distance and round it to the nearest integer
 int distance(const Point& a, const Point& b) {
     return std::round(std::hypot(a.x - b.x, a.y - b.y));
@@ -121,6 +126,19 @@ void perform3Opt(vector<int>& tour, const vector<Point>& points, vector<vector<i
     }
 }
 
+int calPathDis(vector<int> tour, vector<vector<int>> dis) {
+    int tourlen = 0;
+    for(int i = 1; i < tour.size(); ++i) {
+        tourlen += dis[tour[i-1]][tour[i]];
+    }
+    tourlen += dis[tour[tour.size() - 1]][tour[0]];
+    return tourlen;
+}
+vector<int> searchBetter(Path start, vector<vector<int>> dis) {
+    //todo
+
+}
+
 int main() {
 
     int N;
@@ -149,16 +167,17 @@ int main() {
 
     // Initialize with nearest neighbor and perform 2-opt optimization
     vector<int> tour = nearestNeighbor(points, dis);
-    perform2Opt(tour, points, dis);
+    //perform2Opt(tour, points, dis);
 
-    if(N > 960) {
-        for (int index : tour) {
-            cout << index << endl;
-        }
-        return 0;
-    }
+    Path start = {tour, calPathDis(tour, dis)};
+    // if(N > 960) {
+    //     for (int index : tour) {
+    //         cout << index << endl;
+    //     }
+    //     return 0;
+    // }
         
-    perform3Opt(tour, points, dis);
+    // perform3Opt(tour, points, dis);
 
     // Output the final tour
     for (int index : tour) {

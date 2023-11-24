@@ -477,12 +477,12 @@ int main() {
 
     perform2Opt(tour, graph);
 
-    // int tourlen = 0;
-    // for(int i = 1; i < tour.size(); ++i) {
-    //     tourlen += graph.cost[tour[i-1]][tour[i]];
-    // }
-    // tourlen += graph.cost[tour[tour.size()-1]][tour[0]];
-    // cout<<"tour length is "<<tourlen<<endl;
+    int tourlen = 0;
+    for(int i = 1; i < tour.size(); ++i) {
+        tourlen += graph.cost[tour[i-1]][tour[i]];
+    }
+    tourlen += graph.cost[tour[tour.size()-1]][tour[0]];
+    cout<<"tour length is "<<tourlen<<endl;
 
     for (int index : tour) {
         cout << index << endl;
