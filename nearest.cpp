@@ -21,6 +21,7 @@ struct Path {
     vector<int> tour;
     int distance = 0;
     Path(vector<int> tour, int distance) : tour(std::move(tour)), distance(distance) {}
+    Path() {}
 };
 
 // Function to calculate the Euclidean distance and round it to the nearest integer
@@ -174,22 +175,37 @@ Path shuffle(vector<int> tour, const vector<Point>& points, const vector<vector<
     return path;
 }
 
+struct PathComparator {
+    bool operator()(const Path& a, const Path& b) const {
+        return a.distance < b.distance;
+    }
+};
 
-
-vector<int> immuneAlgorithm(int NP, int num, vector<int> &tour, vector<Point>& points, vector<vector<int>> dis) {
+vector<int> immuneAlgorithm(int population, int numofKeypoint, vector<int> &tour, vector<Point>& points, vector<vector<int>> dis) {
     vector<Path> tours;
     Path bestPath(tour, calPathDis(tour, dis));
+    PathComparator comp;
 
+    for (int i = 0; i < population; i++) {
+        tours.push_back(shuffle(bestPath.tour, points, dis, numofKeypoint));
+    }
+    sort(tours.begin(), tours.end(), comp);
     while (std::time(nullptr) - startTime < 1.9) {
-        for (int i = 0; i < NP; i++) {
-            tours.push_back(shuffle(bestPath.tour, points, dis, num));
+        bestPath = tours[0];
+        vector<Path> rest(tours.begin(), tours.begin() + int(population/2));
+        tours.clear();
+        tours.push_back(bestPath);
+        int iteration = 2;
+
+        for (int i = 0; i < int(population/2) * iteration; i++) {
+            tours.push_back(shuffle(rest[i%int(population/2)].tour, points, dis, numofKeypoint));
         }
-        sort(tours.begin(), tours.end(), [](Path &a, Path &b) {
-            return a.distance < b.distance;
-        });
+        sort(tours.begin(), tours.end(), comp);
+
         if (tours[0].distance < bestPath.distance) {
             bestPath = tours[0];
         }
+        tours.resize(population);
     }
     return bestPath.tour;
 }
@@ -227,7 +243,8 @@ int main() {
     // Initialize with nearest neighbor and perform 2-opt optimization
     vector<int> tour = nearestNeighbor(points, dis);
     perform2Opt(tour, points, dis);
-    vector<int> bestTour = immuneAlgorithm((int(log(N)) == 0) ? 1 : int(log(N)), 2, tour, points, dis);
+//    vector<int> bestTour = immuneAlgorithm((int(log(N)) == 0) ? 1 : int(log(N)), 2, tour, points, dis);
+    vector<int> bestTour = immuneAlgorithm(int(log(N)), 2, tour, points, dis);
 
     Path start = {tour, calPathDis(tour, dis)};
     // if(N > 960) {
