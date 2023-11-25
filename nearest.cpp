@@ -10,7 +10,7 @@
 
 using namespace std;
 
-std::time_t startTime;
+time_t startTime;
 
 struct Point {
     double x, y;
@@ -20,13 +20,13 @@ struct Point {
 struct Path {
     vector<int> tour;
     int distance = 0;
-    Path(vector<int> tour, int distance) : tour(std::move(tour)), distance(distance) {}
+    Path(vector<int> tour, int distance) : tour(move(tour)), distance(distance) {}
     Path() {}
 };
 
 // Function to calculate the Euclidean distance and round it to the nearest integer
 int distance(const Point& a, const Point& b) {
-    return std::round(std::hypot(a.x - b.x, a.y - b.y));
+    return round(hypot(a.x - b.x, a.y - b.y));
 }
 
 vector<int> nearestNeighbor(const vector<Point>& points, vector<vector<int>> dis) {
@@ -65,7 +65,7 @@ void reverseSection(vector<int>& tour, size_t i, size_t k) {
 }
 
 // Function to perform 2-opt optimization
-void perform2Opt(vector<int>& tour, const vector<Point>& points, vector<vector<int>> dis) {
+void perform2Opt(vector<int>& tour, vector<vector<int>> dis) {
     bool improvement = true;
     while (improvement) {
         improvement = false;
@@ -105,7 +105,7 @@ void apply3OptMove(vector<int>& tour, size_t i, size_t j, size_t k) {
     reverseSection(tour, j + 1, k);
 }
 
-void perform3Opt(vector<int>& tour, const vector<Point>& points, vector<vector<int>> dis) {
+void perform3Opt(vector<int>& tour, vector<vector<int>> dis) {
     int trynum = 10000;
     while (trynum--) {
         // improvement = false;
@@ -140,12 +140,21 @@ int calPathDis(vector<int> tour, vector<vector<int>> dis) {
     tourlen += dis[tour[tour.size() - 1]][tour[0]];
     return tourlen;
 }
-vector<int> searchBetter(Path start, vector<vector<int>> dis) {
+vector<int> searchBetter(Path start, vector<vector<int>> dis, int neighborNum) {
     //todo
+    vector<Path> neighbors;
+    for (int i = 0; i < neighborNum; ++i) {
+        //generate neighbor of the start tour
+        neighbors.push_back(shuffle(start.tour, dis, 2));
+    }
+    startTime = time(nullptr);
+    while(time(nullptr) - startTime < 1.99) {
+        //todo: didn't understand the logic
+    }
 
 }
 
-Path shuffle(vector<int> tour, const vector<Point>& points, const vector<vector<int>> dis, int num) {
+Path shuffle(vector<int> tour, const vector<vector<int>> dis, int num) {
     int tourSize = tour.size();
 
     vector<int> newTour(tourSize);
@@ -167,7 +176,7 @@ Path shuffle(vector<int> tour, const vector<Point>& points, const vector<vector<
             newTour[i] = tour[i];
         }
     }
-    perform2Opt(newTour, points, dis);
+    perform2Opt(newTour, dis);
     Path path(newTour, calPathDis(newTour, dis));
 //    for (int index : newTour) {
 //        cout << index << endl;
@@ -181,16 +190,16 @@ struct PathComparator {
     }
 };
 
-vector<int> immuneAlgorithm(int population, int numofKeypoint, vector<int> &tour, vector<Point>& points, vector<vector<int>> dis) {
+vector<int> immuneAlgorithm(int population, int numofKeypoint, vector<int> &tour, vector<vector<int>> dis) {
     vector<Path> tours;
     Path bestPath(tour, calPathDis(tour, dis));
     PathComparator comp;
 
     for (int i = 0; i < population; i++) {
-        tours.push_back(shuffle(bestPath.tour, points, dis, numofKeypoint));
+        tours.push_back(shuffle(bestPath.tour, dis, numofKeypoint));
     }
     sort(tours.begin(), tours.end(), comp);
-    while (std::time(nullptr) - startTime < 1.9) {
+    while (time(nullptr) - startTime < 1.99) {
         bestPath = tours[0];
         vector<Path> rest(tours.begin(), tours.begin() + int(population/2));
         tours.clear();
@@ -198,7 +207,7 @@ vector<int> immuneAlgorithm(int population, int numofKeypoint, vector<int> &tour
         int iteration = 2;
 
         for (int i = 0; i < int(population/2) * iteration; i++) {
-            tours.push_back(shuffle(rest[i%int(population/2)].tour, points, dis, numofKeypoint));
+            tours.push_back(shuffle(rest[i%int(population/2)].tour, dis, numofKeypoint));
         }
         sort(tours.begin(), tours.end(), comp);
 
@@ -213,9 +222,6 @@ vector<int> immuneAlgorithm(int population, int numofKeypoint, vector<int> &tour
 
 
 int main() {
-
-    startTime = std::time(nullptr);
-
     int N;
     cin >> N;
 
@@ -240,19 +246,16 @@ int main() {
         }
     }
 
+    startTime = time(nullptr);
     // Initialize with nearest neighbor and perform 2-opt optimization
     vector<int> tour = nearestNeighbor(points, dis);
-    perform2Opt(tour, points, dis);
+    perform2Opt(tour, dis);
 //    vector<int> bestTour = immuneAlgorithm((int(log(N)) == 0) ? 1 : int(log(N)), 2, tour, points, dis);
-    vector<int> bestTour = immuneAlgorithm(int(log(N)), 2, tour, points, dis);
+//please use searchBetter instead
+//    vector<int> bestTour = immuneAlgorithm(int(log(N)), 2, tour, dis);
 
     Path start = {tour, calPathDis(tour, dis)};
-    // if(N > 960) {
-    //     for (int index : tour) {
-    //         cout << index << endl;
-    //     }
-    //     return 0;
-    // }
+    vector<int> bestTour = searchBetter(start, dis, int(log(N)));
         
     // perform3Opt(tour, points, dis);
 
