@@ -20,7 +20,7 @@ struct Point {
 struct Path {
     vector<int> tour;
     int distance = 0;
-    Path(vector<int> tour, int distance) : tour(move(tour)), distance(distance) {}
+    Path(vector<int> tour, int distance) : tour(tour), distance(distance) {}
     Path() {}
 };
 
@@ -140,33 +140,29 @@ int calPathDis(vector<int> tour, vector<vector<int>> dis) {
     tourlen += dis[tour[tour.size() - 1]][tour[0]];
     return tourlen;
 }
-vector<int> searchBetter(Path start, vector<vector<int>> dis, int neighborNum) {
-    //todo
-    vector<Path> neighbors;
-    for (int i = 0; i < neighborNum; ++i) {
-        //generate neighbor of the start tour
-        neighbors.push_back(shuffle(start.tour, dis, 2));
-    }
-    startTime = time(nullptr);
-    while(time(nullptr) - startTime < 1.99) {
-        //todo: didn't understand the logic
-    }
 
-}
-
-Path shuffle(vector<int> tour, const vector<vector<int>> dis, int num) {
+Path randomGenerate(vector<int> tour, const vector<vector<int>> dis, int num) {
     int tourSize = tour.size();
+    num = min(num, tourSize);
 
     vector<int> newTour(tourSize);
-    vector<int> keyPoints = tour;
+    vector<int> keyPoints;
 
+    // for(int i = 0; i < num; ++i) {
+    //     keyPoints.push_back(rand() % tourSize);
+    // }
+    
+    //generate random seed
     random_device rd;
     mt19937 g(rd());
+
+    //using library's function to shuffle first
     shuffle(keyPoints.begin(), keyPoints.end(), g);
+
     keyPoints.resize(num);
 
     for (int i = 0; i < tourSize; i++) {
-        auto it = std::find(keyPoints.begin(), keyPoints.end(), i);
+        auto it = find(keyPoints.begin(), keyPoints.end(), i);
         if (it != keyPoints.end()) {
             int keyPointIndex = std::distance(keyPoints.begin(), it);
             int nextKeyPointIndex = (keyPointIndex + 1) % num;
@@ -192,31 +188,43 @@ struct PathComparator {
 
 vector<int> immuneAlgorithm(int population, int numofKeypoint, vector<int> &tour, vector<vector<int>> dis) {
     vector<Path> tours;
-    Path bestPath(tour, calPathDis(tour, dis));
+    Path bestTour(tour, calPathDis(tour, dis));
     PathComparator comp;
 
     for (int i = 0; i < population; i++) {
-        tours.push_back(shuffle(bestPath.tour, dis, numofKeypoint));
+        tours.push_back(randomGenerate(bestTour.tour, dis, numofKeypoint));
     }
     sort(tours.begin(), tours.end(), comp);
     while (time(nullptr) - startTime < 1.99) {
-        bestPath = tours[0];
+        bestTour = tours[0];
         vector<Path> rest(tours.begin(), tours.begin() + int(population/2));
         tours.clear();
-        tours.push_back(bestPath);
+        tours.push_back(bestTour);
         int iteration = 2;
 
-        for (int i = 0; i < int(population/2) * iteration; i++) {
-            tours.push_back(shuffle(rest[i%int(population/2)].tour, dis, numofKeypoint));
+        for (int i = 0; i < population; i++) {
+            tours.push_back(randomGenerate(rest[i%int(population/2)].tour, dis, numofKeypoint));
         }
         sort(tours.begin(), tours.end(), comp);
 
-        if (tours[0].distance < bestPath.distance) {
-            bestPath = tours[0];
-        }
         tours.resize(population);
     }
-    return bestPath.tour;
+    bestTour = tours[0];
+    return bestTour.tour;
+}
+
+vector<int> searchBetter(Path start, vector<vector<int>> dis, int neighborNum, int changeNum) {
+    //todo
+    vector<Path> neighbors;
+    for (int i = 0; i < neighborNum; ++i) {
+        //generate neighbor of the start tour
+        neighbors.push_back(randomGenerate(start.tour, dis, 2));
+    }
+    while(time(nullptr) - startTime < 1.99) {
+        //todo: didn't understand the logic
+
+    }
+    return {1};
 }
 
 
@@ -252,10 +260,10 @@ int main() {
     perform2Opt(tour, dis);
 //    vector<int> bestTour = immuneAlgorithm((int(log(N)) == 0) ? 1 : int(log(N)), 2, tour, points, dis);
 //please use searchBetter instead
-//    vector<int> bestTour = immuneAlgorithm(int(log(N)), 2, tour, dis);
+    vector<int> bestTour = immuneAlgorithm(int(log(N)), 3, tour, dis);
 
-    Path start = {tour, calPathDis(tour, dis)};
-    vector<int> bestTour = searchBetter(start, dis, int(log(N)));
+    //Path start = {tour, calPathDis(tour, dis)};
+    // vector<int> bestTour = searchBetter(start, dis, int(log(N)), 3);
         
     // perform3Opt(tour, points, dis);
 
